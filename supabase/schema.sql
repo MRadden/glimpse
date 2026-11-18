@@ -70,3 +70,6 @@ exception when others then
   raise notice 'pg_cron is not available. Expired snapshots are hidden but not deleted.';
 end;
 $$;
+
+-- 6. Tell the API to see the new table and functions now.
+notify pgrst, 'reload schema';
