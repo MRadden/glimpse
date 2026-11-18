@@ -131,7 +131,13 @@ export default function Share() {
           )}
         </>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          onAnimationComplete={() => document.getElementById('share-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          id="share-result"
+          className="space-y-3"
+        >
           <Card className="flex flex-col items-center">
             {qr ? <img src={qr} alt="QR code for the share link" className="h-48 w-48 rounded-2xl bg-white p-2" /> : <div className="h-48 w-48 animate-pulse rounded-2xl bg-white/10" />}
             <p className="mt-3 text-center text-[13px] text-muted">
