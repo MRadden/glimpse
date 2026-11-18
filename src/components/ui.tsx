@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PLATFORM_NAMES } from '../lib/platforms'
 import type { Platform } from '../types'
 
 export function Logo({ size = 'md' }: { size?: 'md' | 'lg' }) {
@@ -86,9 +87,9 @@ export function Button({ variant = 'primary', full = true, className = '', child
 }
 
 export const PLATFORM_META: Record<Platform, { name: string; color: string; short: string }> = {
-  tiktok: { name: 'TikTok', color: '#25f4ee', short: 'TT' },
-  youtube: { name: 'YouTube', color: '#ff3d3d', short: 'YT' },
-  instagram: { name: 'Instagram', color: '#e1306c', short: 'IG' },
+  tiktok: { name: PLATFORM_NAMES.tiktok, color: '#25f4ee', short: 'TT' },
+  youtube: { name: PLATFORM_NAMES.youtube, color: '#ff3d3d', short: 'YT' },
+  instagram: { name: PLATFORM_NAMES.instagram, color: '#e1306c', short: 'IG' },
 }
 
 export function PlatformBadge({ platform, className = '' }: { platform: Platform; className?: string }) {

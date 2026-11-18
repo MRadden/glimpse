@@ -1,11 +1,16 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { CreatorScore, FeedItem, InterestScore, Profile, Snapshot } from './types'
-import { pickFeed } from './lib/score'
+import type { CreatorScore, FeedItem, InterestScore, ParsedExport, Platform, Profile, Snapshot } from './types'
+import { profileFor } from './lib/platforms'
+import { buildProfile, pickFeed } from './lib/score'
 
 export const creatorKey = (c: { platform: string; name: string }) => `${c.platform}:${c.name.toLowerCase()}`
 
 interface Draft {
+  /** Built from all uploaded apps. */
   profile: Profile | null
+  /** Parsed data for each app, kept so the profile can be rebuilt without an app. */
+  exports: ParsedExport[]
+  hiddenPlatforms: Set<Platform>
   /** Name of the demo persona, or null for a real upload. */
   demoName: string | null
   owner: string
@@ -35,7 +40,10 @@ function readCompare(): CompareTarget | null {
 interface Store extends Draft {
   compareWith: CompareTarget | null
   setCompareWith: (t: CompareTarget | null) => void
-  load: (profile: Profile, demoName?: string | null) => void
+  load: (exports: ParsedExport[], demoName?: string | null) => void
+  toggleApp: (p: Platform) => void
+  /** Profile from only the apps that will be shared. */
+  shareProfile: Profile | null
   setOwner: (s: string) => void
   setMinutes: (m: number) => void
   toggleTopic: (t: string) => void
@@ -62,6 +70,8 @@ function toggled(set: Set<string>, v: string): Set<string> {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [d, setD] = useState<Draft>({
     profile: null,
+    exports: [],
+    hiddenPlatforms: new Set(),
     demoName: null,
     owner: '',
     minutes: 15,
@@ -81,12 +91,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const load = useCallback((profile: Profile, demoName: string | null = null) => {
-    setD({ profile, demoName, owner: demoName ?? '', minutes: 15, hiddenTopics: new Set(), hiddenCreators: new Set(), hiddenItems: new Set() })
+  const load = useCallback((exports: ParsedExport[], demoName: string | null = null) => {
+    setD({
+      profile: buildProfile(exports),
+      exports,
+      hiddenPlatforms: new Set(),
+      demoName,
+      owner: demoName ?? '',
+      minutes: 15,
+      hiddenTopics: new Set(),
+      hiddenCreators: new Set(),
+      hiddenItems: new Set(),
+    })
   }, [])
 
+  const shareProfile = useMemo(
+    () => (d.profile && d.hiddenPlatforms.size ? profileFor(d.exports, d.hiddenPlatforms) : d.profile),
+    [d.profile, d.exports, d.hiddenPlatforms],
+  )
+
   const derived = useMemo(() => {
-    const p = d.profile
+    const p = shareProfile
     if (!p) return { visibleItems: [], feed: [], interests: [], creators: [] }
     const interestsRaw = p.interests.filter((i) => !d.hiddenTopics.has(i.topic))
     const total = interestsRaw.reduce((a, b) => a + b.share, 0) || 1
@@ -99,7 +124,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         !(it.creator && d.hiddenCreators.has(creatorKey({ platform: it.platform, name: it.creator }))),
     )
     return { visibleItems, feed: pickFeed(visibleItems), interests, creators }
-  }, [d])
+  }, [d, shareProfile])
 
   const store: Store = {
     ...d,
@@ -107,6 +132,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     compareWith,
     setCompareWith,
     load,
+    shareProfile,
+    toggleApp: (p) =>
+      setD((s) => {
+        const next = toggled(s.hiddenPlatforms, p) as Set<Platform>
+        // Always keep at least one app.
+        return next.size >= s.exports.length ? s : { ...s, hiddenPlatforms: next }
+      }),
     setOwner: (owner) => setD((s) => ({ ...s, owner })),
     setMinutes: (minutes) => setD((s) => ({ ...s, minutes })),
     toggleTopic: (t) => setD((s) => ({ ...s, hiddenTopics: toggled(s.hiddenTopics, t) })),

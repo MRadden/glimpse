@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Button, Card, H1, PLATFORM_META, Screen, SectionTitle, Serif } from '../components/ui'
+import { feedLabel, platformsOf } from '../lib/platforms'
 import { topicDef } from '../lib/topics'
 import { creatorKey, useStore } from '../store'
 
@@ -22,9 +23,9 @@ export default function Curate() {
   const nav = useNavigate()
   const s = useStore()
   const [showAll, setShowAll] = useState(false)
-  if (!s.profile) return <Navigate to="/" replace />
-  const p = s.profile
-  const posts = s.profile.items.filter((it) => it.embedUrl || it.demo)
+  if (!s.profile || !s.shareProfile) return <Navigate to="/" replace />
+  const p = s.shareProfile
+  const posts = p.items.filter((it) => it.embedUrl || it.demo)
   const list = showAll ? posts : posts.slice(0, 12)
 
   return (
@@ -32,6 +33,22 @@ export default function Curate() {
       <H1 sub="Tap anything you want to keep private. It is removed from the feed and the interest map.">
         You are in <Serif>control</Serif>
       </H1>
+
+      {s.exports.length > 1 && (
+        <Card className="mb-4">
+          <SectionTitle right={feedLabel(platformsOf(s.feed))}>Apps</SectionTitle>
+          <div className="flex flex-wrap gap-2">
+            {s.exports.map((e) => (
+              <Chip key={e.platform} on={!s.hiddenPlatforms.has(e.platform)} onClick={() => s.toggleApp(e.platform)}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: PLATFORM_META[e.platform].color }} />
+                {PLATFORM_META[e.platform].name}
+                <span className="text-white/50 tabular-nums">{e.items.length}</span>
+              </Chip>
+            ))}
+          </div>
+          <p className="mt-3 text-[12px] text-muted">Posts from the selected apps are mixed into one feed.</p>
+        </Card>
+      )}
 
       <Card className="mb-4">
         <SectionTitle right={`${s.hiddenTopics.size} hidden`}>Topics</SectionTitle>

@@ -3,10 +3,13 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, H1, PLATFORM_META, Screen, Serif } from '../components/ui'
 import { enrichTikTok } from '../lib/enrich'
-import { buildProfile } from '../lib/score'
+import { feedLabel, PLATFORM_NAMES, PLATFORM_ORDER } from '../lib/platforms'
 import { parseAll, readUpload } from '../parsers'
 import { useStore } from '../store'
 import type { ParsedExport } from '../types'
+
+/** "1 post", "2 posts" */
+const n = (count: number, one: string, many = one + 's') => `${count} ${count === 1 ? one : many}`
 
 type Phase = { kind: 'idle' } | { kind: 'busy'; label: string; pct?: number } | { kind: 'done' } | { kind: 'error'; msg: string }
 
@@ -18,15 +21,17 @@ export default function Upload() {
   const [found, setFound] = useState<ParsedExport[]>([])
   const [drag, setDrag] = useState(false)
 
-  async function handle(list: FileList | null) {
-    if (!list?.length) return
+  async function handle(list: File[]) {
+    if (!list.length) return
     try {
       setPhase({ kind: 'busy', label: 'Opening your files…' })
-      const files = (await Promise.all([...list].map(readUpload))).flat()
+      const files = (await Promise.all(list.map(readUpload))).flat()
       setPhase({ kind: 'busy', label: 'Reading your history…' })
       const parsed = parseAll(files)
       // Keep data from earlier uploads for other platforms.
-      const merged = [...found.filter((f) => !parsed.some((p) => p.platform === f.platform)), ...parsed]
+      const merged = [...found.filter((f) => !parsed.some((p) => p.platform === f.platform)), ...parsed].sort(
+        (a, b) => PLATFORM_ORDER.indexOf(a.platform) - PLATFORM_ORDER.indexOf(b.platform),
+      )
       if (!parsed.length) {
         setPhase({ kind: 'error', msg: 'We could not find TikTok, YouTube or Instagram history in this file. Make sure you selected the JSON format.' })
         return
@@ -45,7 +50,8 @@ export default function Upload() {
     }
   }
 
-  const ready = phase.kind === 'done' && found.length > 0
+  const ready = phase.kind !== 'busy' && found.length > 0
+  const missing = PLATFORM_ORDER.filter((p) => !found.some((f) => f.platform === p)).map((p) => PLATFORM_NAMES[p])
 
   return (
     <Screen
@@ -55,18 +61,48 @@ export default function Upload() {
         <Button
           disabled={!ready}
           onClick={() => {
-            load(buildProfile(found))
+            load(found)
             nav('/snapshot')
           }}
         >
-          Build my snapshot
+          {found.length > 1 ? `Mix my ${feedLabel(found.map((f) => f.platform))} feeds` : 'Build my snapshot'}
         </Button>
       }
     >
-      <H1 sub="Add the ZIP file from TikTok, YouTube or Instagram. You can add more than one.">
+      <H1 sub="Add one app, or mix several. Posts from all the apps you add are mixed into one feed.">
         Add your <Serif>files</Serif>
       </H1>
 
+      {found.length > 0 && (
+        <div className="space-y-2">
+          {found.map((f) => (
+            <motion.div key={f.platform} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass flex items-center gap-3 rounded-2xl p-4">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: PLATFORM_META[f.platform].color }} />
+              <div className="flex-1">
+                <p className="font-semibold">{PLATFORM_META[f.platform].name}</p>
+                <p className="text-[13px] text-muted">
+                  {n(f.items.length, 'post')} · {n(f.searches.length, 'search', 'searches')} · {n(new Set(f.platformTopics).size, 'topic')}
+                </p>
+                <details className="mt-1 text-[12px] text-muted">
+                  <summary className="cursor-pointer">{n(f.files.length, 'file')} read</summary>
+                  <ul className="mt-1 space-y-0.5 break-all">
+                    {f.files.map((name) => (
+                      <li key={name}>{name.split('/').pop()}</li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+              <button
+                onClick={() => setFound((all) => all.filter((x) => x.platform !== f.platform))}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-sm text-white/70"
+                aria-label={`Remove ${PLATFORM_META[f.platform].name}`}
+              >
+                ✕
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      )}
       <button
         onClick={() => input.current?.click()}
         onDragOver={(e) => {
@@ -77,15 +113,35 @@ export default function Upload() {
         onDrop={(e) => {
           e.preventDefault()
           setDrag(false)
-          handle(e.dataTransfer.files)
+          handle([...e.dataTransfer.files])
         }}
-        className={`flex flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 py-12 text-center transition ${drag ? 'border-pink bg-pink/10' : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.04]'}`}
+        className={`flex flex-col items-center justify-center rounded-3xl border-2 border-dashed px-6 text-center transition ${found.length ? 'mt-3 py-6' : 'py-12'} ${drag ? 'border-pink bg-pink/10' : 'border-white/15 bg-white/[0.02] hover:bg-white/[0.04]'}`}
       >
-        <div className="bg-brand mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-lg">⤒</div>
-        <p className="text-[16px] font-semibold">Tap to choose a file</p>
-        <p className="mt-1 text-[13px] text-muted">ZIP, JSON, CSV or HTML</p>
+        {found.length ? (
+          <>
+            <p className="text-[16px] font-semibold">+ Add another app</p>
+            {missing.length > 0 && <p className="mt-1 text-[13px] text-muted">Mix in {missing.join(' or ')} too</p>}
+          </>
+        ) : (
+          <>
+            <div className="bg-brand mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-lg">⤒</div>
+            <p className="text-[16px] font-semibold">Tap to choose a file</p>
+            <p className="mt-1 text-[13px] text-muted">ZIP, JSON, CSV or HTML</p>
+          </>
+        )}
       </button>
-      <input ref={input} type="file" accept=".zip,.json,.csv,.html,application/zip" multiple hidden onChange={(e) => handle(e.target.files)} />
+      <input
+        ref={input}
+        type="file"
+        accept=".zip,.json,.csv,.html,application/zip"
+        multiple
+        hidden
+        onChange={(e) => {
+          const picked = [...(e.target.files ?? [])]
+          e.target.value = '' // so the same file can be chosen again
+          handle(picked)
+        }}
+      />
 
       <AnimatePresence mode="wait">
         {phase.kind === 'busy' && (
@@ -104,30 +160,6 @@ export default function Upload() {
         )}
       </AnimatePresence>
 
-      {found.length > 0 && (
-        <div className="mt-5 space-y-2">
-          {found.map((f) => (
-            <motion.div key={f.platform} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass flex items-center gap-3 rounded-2xl p-4">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: PLATFORM_META[f.platform].color }} />
-              <div className="flex-1">
-                <p className="font-semibold">{PLATFORM_META[f.platform].name}</p>
-                <p className="text-[13px] text-muted">
-                  {f.items.length} posts · {f.searches.length} searches · {new Set(f.platformTopics).size} topics
-                </p>
-                <details className="mt-1 text-[12px] text-muted">
-                  <summary className="cursor-pointer">{f.files.length} files read</summary>
-                  <ul className="mt-1 space-y-0.5 break-all">
-                    {f.files.map((name) => (
-                      <li key={name}>{name.split('/').pop()}</li>
-                    ))}
-                  </ul>
-                </details>
-              </div>
-              <span className="text-emerald-400">✓</span>
-            </motion.div>
-          ))}
-        </div>
-      )}
       <p className="mt-6 text-center text-xs text-muted/80">🔒 Files are read on this device. They are not uploaded.</p>
     </Screen>
   )

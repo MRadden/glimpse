@@ -6,6 +6,7 @@ import { Button, Card, H1, Screen, SectionTitle, Serif } from '../components/ui'
 import { cloudEnabled } from '../config'
 import { createShortId, shortUrl, ShortLinkError } from '../share/cloud'
 import { shareUrl } from '../share/codec'
+import { feedLabel, platformsOf } from '../lib/platforms'
 import { useStore } from '../store'
 
 const TIMES = [5, 15, 30]
@@ -49,6 +50,7 @@ export default function Share() {
   if (!s.profile) return <Navigate to="/" replace />
 
   const name = s.owner.trim() || 'Someone'
+  const apps = feedLabel(platformsOf(s.feed))
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url)
@@ -60,7 +62,7 @@ export default function Share() {
   }
   const nativeShare = async () => {
     try {
-      await navigator.share({ title: `${name}'s Glimpse`, text: `Take a ${s.minutes}-minute glimpse into my feed 👀`, url })
+      await navigator.share({ title: `${name}'s Glimpse`, text: `Take a ${s.minutes}-minute glimpse into my ${apps ? apps + ' ' : ''}feed 👀`, url })
     } catch {
       /* the person closed the share sheet */
     }
@@ -157,7 +159,7 @@ export default function Share() {
           <Card className="flex flex-col items-center">
             {qr ? <img src={qr} alt="QR code for the share link" className="h-48 w-48 rounded-2xl bg-white p-2" /> : <div className="h-48 w-48 animate-pulse rounded-2xl bg-white/10" />}
             <p className="mt-3 text-center text-[13px] text-muted">
-              Let them scan it, or send the link. {s.feed.length} posts · {s.minutes} min
+              Let them scan it, or send the link. {apps ? `${apps} · ` : ''}{s.feed.length} posts · {s.minutes} min
               {cloudEnabled() ? ' · expires in 7 days' : ''}
             </p>
             <p className="mt-2 max-w-full truncate rounded-lg bg-white/[0.05] px-3 py-1.5 text-[12px] text-white/70" data-testid="share-url">

@@ -24,7 +24,7 @@ export default function Demo() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07 }}
               onClick={() => {
-                load(prof, p.name)
+                load(p.exports, p.name)
                 nav('/snapshot')
               }}
               className="glass flex w-full items-center gap-4 rounded-3xl p-4 text-left transition hover:bg-white/[0.07] active:scale-[0.99]"

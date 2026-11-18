@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { InterestMap } from '../components/InterestMap'
 import { Embed } from '../components/PostCard'
 import { Button, Card, Logo, PlatformBadge, Screen, SectionTitle, Serif } from '../components/ui'
+import { feedLabel, platformsOf } from '../lib/platforms'
 import { topicDef } from '../lib/topics'
 import { loadShortId, ShortLinkError } from '../share/cloud'
 import { decodeSnapshot } from '../share/codec'
@@ -119,7 +120,9 @@ function Intro({ snap, onStart }: { snap: Snapshot; onStart: () => void }) {
         <h1 className="mt-6 text-[34px] leading-[1.05] font-semibold tracking-tight">
           Step into <br />
           <Serif>
-            <span className="text-gradient">{snap.owner}'s feed</span>
+            <span className="text-gradient">
+              {snap.owner}'s {feedLabel(platformsOf(snap.items))} feed
+            </span>
           </Serif>
         </h1>
         <p className="mt-3 text-[15px] text-muted">
