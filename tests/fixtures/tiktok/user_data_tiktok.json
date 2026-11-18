@@ -1,0 +1,19 @@
+{
+  "Activity": {
+    "Video Browsing History": { "VideoList": [
+      { "Date": "2026-10-01 18:22:10", "Link": "https://www.tiktokv.com/share/video/7421234567890123456/" },
+      { "Date": "2026-10-02 08:01:00", "Link": "https://www.tiktokv.com/share/video/7421234567890123457/" }
+    ] },
+    "Like List": { "ItemFavoriteList": [
+      { "date": "2026-10-01 18:23:00", "link": "https://www.tiktokv.com/share/video/7421234567890123456/" }
+    ] },
+    "Favorite Videos": { "FavoriteVideoList": [
+      { "Date": "2026-09-30 10:00:00", "Link": "https://www.tiktokv.com/share/video/7421234567890123999/" }
+    ] },
+    "Search History": { "SearchList": [
+      { "Date": "2026-10-03 21:00:00", "SearchTerm": "deer hunting tips" },
+      { "Date": "2026-10-04 21:00:00", "SearchTerm": "easy pasta recipe" }
+    ] }
+  },
+  "Profile": { "Profile Information": { "ProfileMap": { "userName": "someone" } } }
+}

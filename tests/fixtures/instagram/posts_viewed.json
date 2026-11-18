@@ -1,0 +1,4 @@
+{ "impressions_history_posts_seen": [
+  { "string_map_data": { "Author": { "value": "dog.rescue.club" }, "Time": { "timestamp": 1790000200 } } },
+  { "string_map_data": { "Author": { "value": "dog.rescue.club" }, "Time": { "timestamp": 1790000300 } } }
+] }

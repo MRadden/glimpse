@@ -1,0 +1,5 @@
+{ "topics_your_topics": [
+  { "string_map_data": { "Name": { "value": "Hunting" } } },
+  { "string_map_data": { "Name": { "value": "Cooking" } } },
+  { "label_values": [ { "label": "Name", "value": "Cats" } ] }
+] }
