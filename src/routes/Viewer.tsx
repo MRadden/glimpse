@@ -5,21 +5,71 @@ import { InterestMap } from '../components/InterestMap'
 import { Embed } from '../components/PostCard'
 import { Button, Card, Logo, PlatformBadge, Screen, SectionTitle, Serif } from '../components/ui'
 import { topicDef } from '../lib/topics'
+import { loadShortId, ShortLinkError } from '../share/cloud'
 import { decodeSnapshot } from '../share/codec'
 import type { FeedItem, Snapshot } from '../types'
 
 type Reaction = 'love' | 'nope'
 type Phase = 'intro' | 'feed' | 'recap'
 
+/** Old long links: the snapshot is inside the link (#/v/...). */
 export default function Viewer() {
   const data = useParams()['*'] ?? ''
   const snap = useMemo(() => decodeSnapshot(data), [data])
+  if (!snap) return <BrokenLink />
+  return <Glimpse snap={snap} />
+}
+
+/** Short links: the snapshot is stored online (#/g/<id>). */
+export function ShortViewer() {
+  const { id = '' } = useParams()
+  const [attempt, setAttempt] = useState(0)
+  const [state, setState] = useState<{ id: string; snap?: Snapshot; error?: ShortLinkError } | null>(null)
+
+  useEffect(() => {
+    let live = true
+    loadShortId(id)
+      .then((snap) => live && setState({ id, snap }))
+      .catch((e) => live && setState({ id, error: e instanceof ShortLinkError ? e : new ShortLinkError('server', 'Something went wrong.') }))
+    return () => {
+      live = false
+    }
+  }, [id, attempt])
+
+  if (!state || state.id !== id) return <Loading />
+  if (state.snap) return <Glimpse snap={state.snap} />
+  const err = state.error!
+  if (err.kind === 'network')
+    return (
+      <BrokenLink
+        title="No connection"
+        message={err.message}
+        retry={() => {
+          setState(null)
+          setAttempt((a) => a + 1)
+        }}
+      />
+    )
+  if (err.kind === 'not-found') return <BrokenLink emoji="⌛" title="This glimpse is not available" message="It has expired or the link is not complete. Glimpse links last 7 days. Ask the sender for a new link." />
+  return <BrokenLink title="This link does not work" message={err.message} />
+}
+
+function Loading() {
+  return (
+    <Screen>
+      <div className="flex flex-1 flex-col items-center justify-center text-center" role="status">
+        <span className="h-10 w-10 animate-spin rounded-full border-[3px] border-white/15 border-t-pink" />
+        <p className="mt-5 text-[15px] text-muted">Opening the glimpse…</p>
+      </div>
+    </Screen>
+  )
+}
+
+function Glimpse({ snap }: { snap: Snapshot }) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [reactions, setReactions] = useState<Record<string, Reaction>>({})
   const [seen, setSeen] = useState(0)
   const [ended, setEnded] = useState<'time' | 'end' | 'stop'>('time')
-
-  if (!snap) return <BrokenLink />
 
   if (phase === 'intro') return <Intro snap={snap} onStart={() => setPhase('feed')} />
   if (phase === 'feed')
@@ -452,14 +502,33 @@ function Recap({ snap, reactions, seen, ended, onAgain }: { snap: Snapshot; reac
   )
 }
 
-function BrokenLink() {
+function BrokenLink({
+  emoji = '🔗',
+  title = 'This link does not work',
+  message = 'Part of the link is missing. Ask the sender to copy the full link again.',
+  retry,
+}: {
+  emoji?: string
+  title?: string
+  message?: string
+  retry?: () => void
+}) {
   const nav = useNavigate()
   return (
-    <Screen footer={<Button onClick={() => nav('/')}>Go to Glimpse</Button>}>
+    <Screen
+      footer={
+        <div className="space-y-3">
+          {retry && <Button onClick={retry}>Try again</Button>}
+          <Button variant={retry ? 'ghost' : 'primary'} onClick={() => nav('/')}>
+            Make my own glimpse
+          </Button>
+        </div>
+      }
+    >
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div className="text-6xl">🔗</div>
-        <h1 className="mt-6 text-2xl font-semibold">This link does not work</h1>
-        <p className="mt-2 text-[15px] text-muted">Part of the link is missing. Ask the sender to copy the full link again.</p>
+        <div className="text-6xl">{emoji}</div>
+        <h1 className="mt-6 text-2xl font-semibold">{title}</h1>
+        <p className="mt-2 text-[15px] text-muted">{message}</p>
       </div>
     </Screen>
   )

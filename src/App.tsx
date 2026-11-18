@@ -7,7 +7,7 @@ import Guide from './routes/Guide'
 import Share from './routes/Share'
 import Snapshot from './routes/Snapshot'
 import Upload from './routes/Upload'
-import Viewer from './routes/Viewer'
+import Viewer, { ShortViewer } from './routes/Viewer'
 import Welcome from './routes/Welcome'
 
 function ScrollTop() {
@@ -32,6 +32,7 @@ export default function App() {
           <Route path="/curate" element={<Curate />} />
           <Route path="/share" element={<Share />} />
           <Route path="/v/*" element={<Viewer />} />
+          <Route path="/g/:id" element={<ShortViewer />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>
