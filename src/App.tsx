@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { StoreProvider } from './store'
+import { CompareStart, CompareView } from './routes/Compare'
 import Curate from './routes/Curate'
 import Demo from './routes/Demo'
 import Guide from './routes/Guide'
@@ -33,6 +34,8 @@ export default function App() {
           <Route path="/share" element={<Share />} />
           <Route path="/v/*" element={<Viewer />} />
           <Route path="/g/:id" element={<ShortViewer />} />
+          <Route path="/compare" element={<CompareStart />} />
+          <Route path="/c/:a/:b" element={<CompareView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>

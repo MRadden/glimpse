@@ -20,6 +20,8 @@ export default function Share() {
   const [link, setLink] = useState<LinkState>({ status: 'idle' })
   const made = link.status === 'ready'
   const url = link.status === 'ready' ? link.url : ''
+  const myId = url.match(/#\/g\/([A-Za-z0-9]{10})$/)?.[1]
+  const target = s.compareWith && myId && s.compareWith.id !== myId ? s.compareWith : null
   // A new name or time limit needs a new link.
   const resetLink = () => setLink({ status: 'idle' })
 
@@ -138,6 +140,20 @@ export default function Share() {
           id="share-result"
           className="space-y-3"
         >
+          {target && (
+            <Card className="!border-pink/30 bg-pink/[0.06]">
+              <p className="text-[15px] font-semibold">Ready to compare with {target.owner}</p>
+              <p className="mt-1 mb-4 text-[13px] leading-snug text-muted">See your two interest maps side by side, then send the comparison to {target.owner}.</p>
+              <Button
+                onClick={() => {
+                  s.setCompareWith(null)
+                  nav(`/c/${target.id}/${myId}`)
+                }}
+              >
+                Compare with {target.owner}
+              </Button>
+            </Card>
+          )}
           <Card className="flex flex-col items-center">
             {qr ? <img src={qr} alt="QR code for the share link" className="h-48 w-48 rounded-2xl bg-white p-2" /> : <div className="h-48 w-48 animate-pulse rounded-2xl bg-white/10" />}
             <p className="mt-3 text-center text-[13px] text-muted">

@@ -1,5 +1,5 @@
 import type { CreatorScore, FeedItem, InterestScore, ParsedExport, Platform, Profile, Signal } from '../types'
-import { classify } from './topics'
+import { classify, classifyHandle } from './topics'
 
 const SIGNAL_WEIGHT: Record<Signal, number> = { watched: 1, saved: 2.5, liked: 3 }
 const RANK: Record<Signal, number> = { watched: 0, saved: 1, liked: 2 }
@@ -42,7 +42,7 @@ export function buildProfile(exports: ParsedExport[]): Profile {
   for (const ex of exports) {
     for (const t of ex.platformTopics) bump(t, 2)
     for (const s of ex.searches) for (const t of classify(s.query)) bump(t, 0.5)
-    for (const c of ex.creatorViews) for (const t of classify(c.name)) bump(t, 0.3)
+    for (const c of ex.creatorViews) for (const t of classifyHandle(c.name)) bump(t, 0.3)
   }
 
   const total = [...scores.values()].reduce((a, b) => a + b, 0) || 1

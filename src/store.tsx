@@ -15,7 +15,26 @@ interface Draft {
   hiddenItems: Set<string>
 }
 
+/** The glimpse that the viewer wants to compare with their own. */
+export interface CompareTarget {
+  id: string
+  owner: string
+}
+
+const COMPARE_KEY = 'glimpse.compareWith'
+
+function readCompare(): CompareTarget | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(COMPARE_KEY) ?? 'null')
+    return v && typeof v.id === 'string' && typeof v.owner === 'string' ? v : null
+  } catch {
+    return null
+  }
+}
+
 interface Store extends Draft {
+  compareWith: CompareTarget | null
+  setCompareWith: (t: CompareTarget | null) => void
   load: (profile: Profile, demoName?: string | null) => void
   setOwner: (s: string) => void
   setMinutes: (m: number) => void
@@ -51,6 +70,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     hiddenItems: new Set(),
   })
 
+  const [compareWith, setCompareState] = useState<CompareTarget | null>(readCompare)
+  const setCompareWith = useCallback((t: CompareTarget | null) => {
+    setCompareState(t)
+    try {
+      if (t) localStorage.setItem(COMPARE_KEY, JSON.stringify(t))
+      else localStorage.removeItem(COMPARE_KEY)
+    } catch {
+      /* storage is blocked; keep it in memory only */
+    }
+  }, [])
+
   const load = useCallback((profile: Profile, demoName: string | null = null) => {
     setD({ profile, demoName, owner: demoName ?? '', minutes: 15, hiddenTopics: new Set(), hiddenCreators: new Set(), hiddenItems: new Set() })
   }, [])
@@ -74,6 +104,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const store: Store = {
     ...d,
     ...derived,
+    compareWith,
+    setCompareWith,
     load,
     setOwner: (owner) => setD((s) => ({ ...s, owner })),
     setMinutes: (minutes) => setD((s) => ({ ...s, minutes })),

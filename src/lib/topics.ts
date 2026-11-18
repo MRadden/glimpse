@@ -77,3 +77,19 @@ export function classify(...texts: (string | undefined)[]): string[] {
   for (const m of MATCHERS) if (m.re.test(text)) found.push(m.label)
   return found
 }
+
+// Long keywords can be found inside joined-up names like "bassfishingpro".
+const LONG_KEYWORDS: [string, string][] = TOPICS.flatMap((t) =>
+  t.keywords.filter((k) => k.length >= 5 && !/[\s-]/.test(k)).map((k) => [k, t.label] as [string, string]),
+)
+
+/** Topics from a creator name or handle, such as "fishing.daily" or "bassfishingpro". */
+export function classifyHandle(name?: string): string[] {
+  if (!name) return []
+  const direct = classify(name.replace(/[._]+/g, ' '))
+  if (direct.length) return direct
+  const flat = name.toLowerCase().replace(/[^a-z]/g, '')
+  const found = new Set<string>()
+  for (const [k, label] of LONG_KEYWORDS) if (flat.includes(k)) found.add(label)
+  return [...found]
+}

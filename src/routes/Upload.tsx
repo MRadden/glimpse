@@ -114,6 +114,14 @@ export default function Upload() {
                 <p className="text-[13px] text-muted">
                   {f.items.length} posts · {f.searches.length} searches · {new Set(f.platformTopics).size} topics
                 </p>
+                <details className="mt-1 text-[12px] text-muted">
+                  <summary className="cursor-pointer">{f.files.length} files read</summary>
+                  <ul className="mt-1 space-y-0.5 break-all">
+                    {f.files.map((name) => (
+                      <li key={name}>{name.split('/').pop()}</li>
+                    ))}
+                  </ul>
+                </details>
               </div>
               <span className="text-emerald-400">✓</span>
             </motion.div>

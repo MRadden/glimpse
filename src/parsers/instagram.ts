@@ -1,5 +1,5 @@
 import type { ParsedExport, Signal } from '../types'
-import { classify } from '../lib/topics'
+import { classify, classifyHandle } from '../lib/topics'
 import { baseName, emptyExport, fixMojibake, safeJson, toTime, walk, type ExportFile } from './util'
 
 export function instagramCode(url: string): { kind: 'p' | 'reel'; code: string } | undefined {
@@ -15,18 +15,74 @@ const LINK_FILES: Record<string, Signal> = {
   'posts_viewed.json': 'watched',
   'videos_watched.json': 'watched',
   'reels_watched.json': 'watched',
+  'suggested_profiles_viewed.json': 'watched',
 }
 
-const TOPIC_FILE = /(your_topics|recommended_topics|ads_interests|other_categories_used_to_reach_you|inferred_data)/i
+/** Topics that Instagram picked for your feed. We keep their names even when our dictionary does not know them. */
+const CONTENT_TOPIC_FILE = /(your_topics|recommended_topics|topics_you|content_preferences)/i
+/** Advertising categories. Many are not about content, so we keep only the ones our dictionary knows. */
+const AD_TOPIC_FILE = /(ads_interests|ad_interests|other_categories_used_to_reach_you|inferred|interest_categories|ad_preferences)/i
 
-/** Read the label/value pairs that Instagram uses in many formats. */
-function fieldsOf(obj: Record<string, unknown>): Record<string, { value?: string; href?: string; timestamp?: number }> {
-  const out: Record<string, { value?: string; href?: string; timestamp?: number }> = {}
-  const sm = obj.string_map_data as Record<string, { value?: string; href?: string; timestamp?: number }> | undefined
-  if (sm) Object.assign(out, sm)
-  const lv = obj.label_values as { label?: string; value?: string; href?: string; timestamp?: number }[] | undefined
-  if (Array.isArray(lv)) for (const e of lv) if (e.label) out[e.label] = e
+const SKIP_VALUE = /^(https?:|www\.|\d+$)|@/i
+const NAME_LABELS = /^(username|owner|author|name|account|profile)$/i
+
+/** Every short text value in a JSON value: "value", "name" or "title" fields at any depth. */
+function textValues(data: unknown): string[] {
+  const out: string[] = []
+  walk(data, (obj) => {
+    for (const key of ['value', 'name', 'title']) {
+      const v = obj[key]
+      if (typeof v !== 'string') continue
+      const s = fixMojibake(v).trim()
+      if (s.length >= 2 && s.length <= 60 && !SKIP_VALUE.test(s) && /\p{L}/u.test(s)) out.push(s)
+    }
+  })
   return out
+}
+
+/** A creator's name from the many shapes Instagram uses. */
+function authorOf(obj: Record<string, unknown>): string {
+  if (typeof obj.title === 'string' && obj.title.trim()) return fixMojibake(obj.title).trim()
+  const byLabel: Record<string, string> = {}
+  walk(obj, (o) => {
+    const label = typeof o.label === 'string' ? o.label.toLowerCase() : ''
+    if (NAME_LABELS.test(label) && typeof o.value === 'string' && o.value.trim()) byLabel[label] ??= o.value.trim()
+    const sm = o.string_map_data as Record<string, { value?: string }> | undefined
+    if (sm) for (const [k, v] of Object.entries(sm)) if (NAME_LABELS.test(k) && v?.value) byLabel[k.toLowerCase()] ??= v.value.trim()
+  })
+  // The handle is the best name. A display name is the last choice.
+  const found = byLabel.username || byLabel.author || byLabel.owner || byLabel.account || byLabel.profile || byLabel.name || ''
+  return fixMojibake(found)
+}
+
+/** All post links in an object, with their time. */
+function linksOf(obj: Record<string, unknown>): { href: string; timestamp?: number }[] {
+  const links: { href: string; timestamp?: number }[] = []
+  const own = typeof obj.timestamp === 'number' ? obj.timestamp : undefined
+  walk(obj, (o) => {
+    for (const key of ['href', 'value']) {
+      const v = o[key]
+      if (typeof v === 'string' && /instagram\.com\/(?:[\w.]+\/)?(p|reel|reels|tv)\//.test(v)) {
+        links.push({ href: v, timestamp: typeof o.timestamp === 'number' && o.timestamp > 0 ? o.timestamp : own })
+      }
+    }
+  })
+  return links
+}
+
+function viewTime(obj: Record<string, unknown>): number | undefined {
+  const sm = obj.string_map_data as Record<string, { timestamp?: number; value?: string }> | undefined
+  return toTime(sm?.Time?.timestamp ?? (typeof obj.timestamp === 'number' ? obj.timestamp : undefined))
+}
+
+/** The objects that stand for one post (the items of the main list in each file). */
+function entries(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) return data.filter((x) => x && typeof x === 'object')
+  if (data && typeof data === 'object') {
+    const lists = Object.values(data).filter(Array.isArray) as unknown[][]
+    return lists.flat().filter((x) => x && typeof x === 'object') as Record<string, unknown>[]
+  }
+  return []
 }
 
 /**
@@ -38,44 +94,32 @@ export function parseInstagram(files: ExportFile[]): ParsedExport {
   const seen = new Set<string>()
 
   for (const f of files) {
+    if (!f.name.toLowerCase().endsWith('.json')) continue
     const name = baseName(f.name)
     const signal = LINK_FILES[name]
-    const isTopics = TOPIC_FILE.test(name)
-    if (!signal && !isTopics) continue
+    const content = !signal && CONTENT_TOPIC_FILE.test(name)
+    const ads = !signal && !content && AD_TOPIC_FILE.test(name)
+    if (!signal && !content && !ads) continue
     const data = safeJson(f.text)
     if (!data) continue
     out.files.push(f.name)
 
-    if (isTopics) {
-      walk(data, (obj) => {
-        const fields = fieldsOf(obj)
-        for (const [label, v] of Object.entries(fields)) {
-          if (/name|interest|topic|value/i.test(label) && v.value) {
-            const raw = fixMojibake(v.value)
-            const topics = classify(raw)
-            out.platformTopics.push(...(topics.length ? topics : []))
-          }
-        }
-        const list = (obj as { string_list_data?: { value?: string }[] }).string_list_data
-        if (Array.isArray(list)) for (const e of list) if (e.value) out.platformTopics.push(...classify(fixMojibake(e.value)))
-      })
+    if (content || ads) {
+      for (const text of new Set(textValues(data))) {
+        if (/^(name|value|topic|interest)s?$/i.test(text)) continue
+        const known = classify(text)
+        if (known.length) out.platformTopics.push(...known)
+        else if (content) out.platformTopics.push(titleCase(text))
+      }
       continue
     }
 
-    walk(data, (obj) => {
-      const fields = fieldsOf(obj)
-      const author = fixMojibake(
-        (obj.title as string) || fields.Author?.value || fields.Owner?.value || fields.Username?.value || '',
-      ).trim()
-      const links: { href: string; timestamp?: number }[] = []
-      for (const v of Object.values(fields)) if (v?.href) links.push({ href: v.href, timestamp: v.timestamp })
-      const list = (obj as { string_list_data?: { href?: string; timestamp?: number }[] }).string_list_data
-      if (Array.isArray(list)) for (const e of list) if (e.href) links.push({ href: e.href, timestamp: e.timestamp })
-
-      const time = toTime(links[0]?.timestamp ?? fields.Time?.timestamp ?? fields.Time?.value)
+    for (const obj of entries(data)) {
+      const author = authorOf(obj)
+      const links = linksOf(obj)
       if (!links.length) {
-        if (author && fields.Author) out.creatorViews.push({ name: author, time })
-        return
+        if (author) out.creatorViews.push({ name: author, time: viewTime(obj) })
+        continue
       }
       for (const l of links) {
         const c = instagramCode(l.href)
@@ -89,12 +133,16 @@ export function parseInstagram(files: ExportFile[]): ParsedExport {
           url: `https://www.instagram.com/${c.kind}/${c.code}/`,
           embedUrl: `https://www.instagram.com/${c.kind}/${c.code}/embed/`,
           creator: author || undefined,
-          time: toTime(l.timestamp) ?? time,
+          time: toTime(l.timestamp) ?? viewTime(obj),
           signal,
-          topics: classify(author),
+          topics: classifyHandle(author),
         })
       }
-    })
+    }
   }
   return out
+}
+
+function titleCase(s: string): string {
+  return s.replace(/\s+/g, ' ').replace(/(^|\s)(\p{Ll})/gu, (_, sp, c) => sp + c.toUpperCase())
 }

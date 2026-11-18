@@ -7,6 +7,7 @@ import { Button, Card, Logo, PlatformBadge, Screen, SectionTitle, Serif } from '
 import { topicDef } from '../lib/topics'
 import { loadShortId, ShortLinkError } from '../share/cloud'
 import { decodeSnapshot } from '../share/codec'
+import { useStore } from '../store'
 import type { FeedItem, Snapshot } from '../types'
 
 type Reaction = 'love' | 'nope'
@@ -37,7 +38,7 @@ export function ShortViewer() {
   }, [id, attempt])
 
   if (!state || state.id !== id) return <Loading />
-  if (state.snap) return <Glimpse snap={state.snap} />
+  if (state.snap) return <Glimpse snap={state.snap} shortId={id} />
   const err = state.error!
   if (err.kind === 'network')
     return (
@@ -54,7 +55,7 @@ export function ShortViewer() {
   return <BrokenLink title="This link does not work" message={err.message} />
 }
 
-function Loading() {
+export function Loading() {
   return (
     <Screen>
       <div className="flex flex-1 flex-col items-center justify-center text-center" role="status">
@@ -65,7 +66,7 @@ function Loading() {
   )
 }
 
-function Glimpse({ snap }: { snap: Snapshot }) {
+function Glimpse({ snap, shortId }: { snap: Snapshot; shortId?: string }) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [reactions, setReactions] = useState<Record<string, Reaction>>({})
   const [seen, setSeen] = useState(0)
@@ -91,6 +92,7 @@ function Glimpse({ snap }: { snap: Snapshot }) {
       reactions={reactions}
       seen={seen}
       ended={ended}
+      shortId={shortId}
       onAgain={() => {
         setReactions({})
         setPhase('intro')
@@ -348,8 +350,23 @@ function Feed({
   )
 }
 
-function Recap({ snap, reactions, seen, ended, onAgain }: { snap: Snapshot; reactions: Record<string, Reaction>; seen: number; ended: 'time' | 'end' | 'stop'; onAgain: () => void }) {
+function Recap({
+  snap,
+  reactions,
+  seen,
+  ended,
+  shortId,
+  onAgain,
+}: {
+  snap: Snapshot
+  reactions: Record<string, Reaction>
+  seen: number
+  ended: 'time' | 'end' | 'stop'
+  shortId?: string
+  onAgain: () => void
+}) {
   const nav = useNavigate()
+  const { setCompareWith } = useStore()
   const [copied, setCopied] = useState(false)
 
   const { loved, noped, match, count } = useMemo(() => {
@@ -402,13 +419,24 @@ function Recap({ snap, reactions, seen, ended, onAgain }: { snap: Snapshot; reac
     <Screen
       footer={
         <div className="space-y-3">
-          <Button onClick={share}>{copied ? 'Copied ✓' : `Send my reaction to ${snap.owner}`}</Button>
+          {shortId ? (
+            <Button
+              onClick={() => {
+                setCompareWith({ id: shortId, owner: snap.owner })
+                nav('/compare')
+              }}
+            >
+              Compare our feeds
+            </Button>
+          ) : (
+            <Button onClick={() => nav('/')}>Make my own glimpse</Button>
+          )}
           <div className="grid grid-cols-2 gap-2">
+            <Button variant="ghost" onClick={share}>
+              {copied ? 'Copied ✓' : 'Send my reaction'}
+            </Button>
             <Button variant="ghost" onClick={onAgain}>
               Watch again
-            </Button>
-            <Button variant="ghost" onClick={() => nav('/')}>
-              Make my own
             </Button>
           </div>
         </div>
@@ -502,7 +530,7 @@ function Recap({ snap, reactions, seen, ended, onAgain }: { snap: Snapshot; reac
   )
 }
 
-function BrokenLink({
+export function BrokenLink({
   emoji = '🔗',
   title = 'This link does not work',
   message = 'Part of the link is missing. Ask the sender to copy the full link again.',

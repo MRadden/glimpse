@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Button, Logo, Screen, Serif } from '../components/ui'
+import { useStore } from '../store'
 
 const STEPS = [
   { emoji: '📦', title: 'Get your data', text: 'Download your history from TikTok, YouTube or Instagram. It is your data, and it is free.' },
@@ -10,6 +11,7 @@ const STEPS = [
 
 export default function Welcome() {
   const nav = useNavigate()
+  const { compareWith } = useStore()
   return (
     <Screen
       footer={
@@ -24,7 +26,17 @@ export default function Welcome() {
       <div className="pt-6">
         <Logo />
       </div>
-      <div className="mt-14">
+      {compareWith && (
+        <button onClick={() => nav('/compare')} className="glass mt-6 flex w-full items-center gap-3 rounded-2xl p-3.5 text-left">
+          <span className="bg-brand flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold">{compareWith.owner.slice(0, 1).toUpperCase()}</span>
+          <span className="flex-1 text-[14px] leading-snug">
+            <span className="font-semibold">Compare with {compareWith.owner}</span>
+            <span className="block text-[12px] text-muted">Make your glimpse to see your feeds side by side.</span>
+          </span>
+          <span className="text-muted">›</span>
+        </button>
+      )}
+      <div className={compareWith ? 'mt-8' : 'mt-14'}>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="mb-4 text-[13px] font-semibold tracking-widest text-muted uppercase">
           Your feed says a lot
         </motion.p>

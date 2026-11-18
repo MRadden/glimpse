@@ -6,7 +6,7 @@ import { parseYouTube } from '../src/parsers/youtube'
 import { parseInstagram } from '../src/parsers/instagram'
 import { parseAll, type ExportFile } from '../src/parsers'
 import { buildProfile, pickFeed } from '../src/lib/score'
-import { classify } from '../src/lib/topics'
+import { classify, classifyHandle } from '../src/lib/topics'
 import { decodeSnapshot, encodeSnapshot } from '../src/share/codec'
 import { PERSONAS } from '../src/demo/personas'
 
@@ -120,5 +120,31 @@ describe('profile and sharing', () => {
 
   it('rejects a broken link', () => {
     expect(decodeSnapshot('not-a-real-snapshot')).toBeNull()
+  })
+})
+
+describe('Instagram parser, newer export format', () => {
+  const r = parseInstagram(load('instagram_new'))
+  it('reads posts with nested owner data and prefers the username', () => {
+    expect(r.items).toHaveLength(1)
+    expect(r.items[0].embedUrl).toBe('https://www.instagram.com/reel/NeW123abc/embed/')
+    expect(r.items[0].creator).toBe('bassfishingpro')
+    expect(r.items[0].topics).toContain('Fishing')
+    expect(r.items[0].time).toBe(1_790_000_000_000)
+  })
+  it('reads topic lists, keeps unknown content topics, and skips unknown ad categories', () => {
+    expect(r.platformTopics).toEqual(expect.arrayContaining(['Pets & Animals', 'Home & DIY', 'Formula Racing', 'Hunting & Outdoors']))
+    expect(r.platformTopics).not.toContain('Engaged Shoppers')
+    expect(r.platformTopics).not.toContain('Engaged shoppers')
+  })
+  it('finds topics inside joined-up creator names', () => {
+    expect(r.creatorViews[0].name).toBe('dailycomedyclips')
+    expect(classifyHandle('dailycomedyclips')).toContain('Comedy')
+    expect(classifyHandle('the.cat.lady')).toContain('Pets & Animals')
+    expect(classifyHandle('xyz_123')).toEqual([])
+  })
+  it('makes an interest map from Instagram data alone', () => {
+    const prof = buildProfile([r])
+    expect(prof.interests.length).toBeGreaterThanOrEqual(4)
   })
 })

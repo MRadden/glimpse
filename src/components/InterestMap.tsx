@@ -5,7 +5,12 @@ import { topicDef } from '../lib/topics'
 export function InterestMap({ interests, max = 8 }: { interests: InterestScore[]; max?: number }) {
   const top = interests.slice(0, max)
   const peak = top[0]?.share || 1
-  if (!top.length) return <p className="text-sm text-muted">No interests found yet.</p>
+  if (!top.length)
+    return (
+      <p className="text-sm leading-relaxed text-muted">
+        No interests found yet. For Instagram, include <b className="text-white/80">Preferences</b> and <b className="text-white/80">Ads information</b> in your download. Adding a TikTok or YouTube file also helps.
+      </p>
+    )
   return (
     <ul className="space-y-3.5">
       {top.map((it, i) => {
