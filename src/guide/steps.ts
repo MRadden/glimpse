@@ -82,13 +82,17 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     sets: {
       android: { checked: '2026-11-19', steps: TIKTOK_PHONE, next: TIKTOK_NEXT },
       iphone: { steps: TIKTOK_PHONE, next: TIKTOK_NEXT, source: 'Same as the Android app. iPhone screens can look a little different.' },
+      // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
+        checked: '2026-11-19',
         steps: [
-          { text: 'Go to **tiktok.com** and log in.' },
-          { text: 'Click your profile picture, then **Settings**.' },
-          { text: 'Find **Download your data**.' },
-          { text: 'Set the file format to **JSON** and select all the data.', important: true },
-          { text: 'Click **Request data**.' },
+          { text: 'Go to **tiktok.com** in your browser and log in.' },
+          { text: 'Click your **profile picture** at the top right, then **View profile**.' },
+          { text: 'On your profile, click the **settings** icon (the circle next to **Promote post**).' },
+          { text: 'Scroll down to **Privacy**. Below **Data**, click **Download your data**.' },
+          { text: 'On the **Request data** tab, below **Select file format**, select **JSON** (it starts on TXT).', important: true },
+          { text: 'Below **Select data to download**, click **Select all**. At first, nothing is selected (“0/10 selected”).', important: true },
+          { text: 'Click **Request data**. TikTok shows “Your data request is being processed”.' },
         ],
         next: TIKTOK_NEXT,
       },
@@ -100,15 +104,19 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     sets: {
       android: { checked: '2026-11-19', steps: INSTAGRAM_PHONE, next: INSTAGRAM_NEXT },
       iphone: { steps: INSTAGRAM_PHONE, next: INSTAGRAM_NEXT, source: 'Same as the Android app. iPhone screens can look a little different.' },
+      // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
+        checked: '2026-11-19',
         steps: [
-          { text: 'Go to **instagram.com** and log in.' },
+          { text: 'Go to **instagram.com** in your browser and log in.' },
           { text: 'Click **More** (☰) at the bottom left, then **Settings**.' },
-          { text: 'Click **Meta Account** (or **Accounts Center**), then **Your information and permissions**.' },
-          { text: 'Click **Export your information**, then **Create export**, and select your Instagram profile.' },
+          { text: 'Below **Your account**, click **Meta Account**.' },
+          { text: 'In the menu on the left, click **Your information and permissions**, then **Export your information**.' },
+          { text: 'Click **Create export**, then select your **Instagram** profile (not the Facebook one).' },
           { text: 'Click **Export to device**.' },
-          { text: 'Click **Format**, select **JSON**, and click **Save**.', important: true },
-          { text: 'Click **Start export**, then enter your password.' },
+          { text: 'On “Confirm your export”, click **Format**, select **JSON**, and click **Save**. It starts on HTML.', important: true },
+          { text: 'Optional: click **Media quality**, select **Lower quality**, and click **Save**. Keep **All available information**.' },
+          { text: 'Click **Start export**. Enter your password and click **Continue**.' },
         ],
         next: INSTAGRAM_NEXT,
       },
@@ -118,21 +126,22 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     wait: 'Minutes to a few days. Most people get it the same day.',
     tip: 'Google Takeout is a website, so the steps are the same on a phone and a computer. A computer is easier.',
     sets: {
+      // Checked against a Windows (Chrome) screen recording and Google's help page on 2026-11-19.
       all: {
-        source: 'Google Account Help: “How to download your Google data”',
+        checked: '2026-11-19',
         steps: [
           { text: 'Go to **takeout.google.com** in your browser and sign in.' },
-          { text: 'Click **Deselect all** at the top of the list.' },
-          { text: 'Scroll down to **YouTube and YouTube Music** and select its box.' },
-          { text: 'Click **Multiple formats**. For **history**, select **JSON**, then click **OK**.', important: true },
-          { text: 'Click **All YouTube data included**. Keep **history**, **playlists** and **subscriptions**. You can clear **videos** to make the file much smaller. Click **OK**.' },
-          { text: 'Scroll to the bottom and click **Next step**.' },
-          { text: 'Keep **Send download link via email**, **Export once**, and the **.zip** file type.' },
-          { text: 'Click **Create export**.' },
+          { text: 'Below **Create a new export**, find **Select data to include**. Click **Deselect all**.', important: true },
+          { text: 'Scroll down to **YouTube and YouTube Music** and select its box. The top now says “1 of … selected”.' },
+          { text: 'Optional: click **Multiple formats** and set **history** to **JSON**. HTML also works in Glimpse.' },
+          { text: 'Optional: click **All YouTube data included** and clear **videos**. This makes the file much smaller.' },
+          { text: 'Click **Next step**.' },
+          { text: 'Keep **Send download link via email**, **Export once**, **.zip**, and **2 GB**.' },
+          { text: 'Click **Create export**. Google shows “Google is creating a copy of data from YouTube and YouTube Music”.' },
         ],
         next: [
           'Google emails you when the export is ready. Most people get it the same day.',
-          'In the email, click **Download archive**, then follow the steps on the screen.',
+          'In the email, click **Download archive**. You have **one week** to download the file.',
         ],
       },
     },
