@@ -4,9 +4,16 @@ import { Button, Logo, Screen, Serif } from '../components/ui'
 import { useStore } from '../store'
 
 const STEPS = [
-  { emoji: '📦', title: 'Get your data', text: 'Download your history from TikTok, YouTube or Instagram. It is your data, and it is free.' },
+  { emoji: '📦', title: 'Get your data', text: 'Ask TikTok, Instagram or YouTube for a copy of your history. It is your data, and it is free.' },
   { emoji: '🙈', title: 'You choose', text: 'Hide any topic, creator or post. Nothing leaves your phone until you approve it.' },
   { emoji: '⏳', title: 'Share a glimpse', text: 'Send a link. They scroll your feed for 5, 15 or 30 minutes. Your real algorithm does not change.' },
+]
+
+/** Usual waiting times. They change with how busy each app is. */
+const WAITS: [string, string][] = [
+  ['TikTok', 'usually a few hours, sometimes days'],
+  ['Instagram', 'usually under a day, sometimes days'],
+  ['YouTube (Google)', 'minutes to a few days, most the same day'],
 ]
 
 export default function Welcome() {
@@ -16,10 +23,13 @@ export default function Welcome() {
     <Screen
       footer={
         <div className="space-y-3">
-          <Button onClick={() => nav('/guide')}>Share my feed</Button>
-          <Button variant="ghost" onClick={() => nav('/demo')}>
-            Try a demo first
+          <Button onClick={() => nav('/guide')}>Get my data</Button>
+          <Button variant="ghost" onClick={() => nav('/upload')}>
+            I already have my files
           </Button>
+          <button onClick={() => nav('/demo')} className="w-full py-1 text-center text-[14px] font-medium text-white/70 underline-offset-4 hover:underline">
+            Try a demo first
+          </button>
         </div>
       }
     >
@@ -51,7 +61,31 @@ export default function Welcome() {
         </p>
       </div>
 
-      <div className="mt-10 space-y-3">
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="mt-8 rounded-3xl border border-amber/30 bg-amber/[0.07] p-5"
+        aria-labelledby="before-you-start"
+      >
+        <p id="before-you-start" className="flex items-center gap-2 text-[15px] font-semibold">
+          <span aria-hidden>⏳</span> Before you start
+        </p>
+        <p className="mt-2 text-[14px] leading-relaxed text-white/80">
+          First, you ask each app for a copy of your data. The app prepares a file for you. This can take <b className="text-white">a few hours to a few days</b>, depending on how busy the app&apos;s servers are.
+        </p>
+        <ul className="mt-3 space-y-1.5 text-[13px] text-white/75">
+          {WAITS.map(([app, wait]) => (
+            <li key={app} className="flex justify-between gap-3">
+              <span className="font-medium text-white/90">{app}</span>
+              <span className="text-right text-muted">{wait}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[13px] leading-snug text-muted">You only do it once. We show you each step. Ask today, then come back when the app tells you the file is ready.</p>
+      </motion.section>
+
+      <div className="mt-4 space-y-3">
         {STEPS.map((s, i) => (
           <motion.div
             key={s.title}
