@@ -18,6 +18,10 @@ export interface GuideStep {
 }
 
 export interface StepSet {
+  /** The short path for people who need only a reminder, e.g. ['Profile', '☰', 'Settings and privacy']. */
+  path: string[]
+  /** One or two things people often get wrong, in a few words. */
+  remember: string[]
   steps: GuideStep[]
   /** What happens after the request: where the file arrives and how to get it. */
   next: string[]
@@ -48,6 +52,9 @@ const TIKTOK_PHONE: GuideStep[] = [
   { text: 'Make sure it says **10/10 selected**, then tap **Request data**.', image: 'tiktok-android-6.webp' },
   { text: 'TikTok shows “Your data request is being processed”. Your request is now in the **Download data** tab.', image: 'tiktok-android-7.webp' },
 ]
+
+const TIKTOK_PHONE_PATH = ['Profile', '☰', 'Settings and privacy', 'Account', 'Download your data']
+const TIKTOK_REMEMBER = ['File format: **JSON** (it starts on TXT)', 'Tap **Select all** (it starts at 0/10)']
 
 const TIKTOK_NEXT = [
   'TikTok sends you a notification when the file is ready.',
@@ -82,6 +89,8 @@ const INSTAGRAM_IPHONE: GuideStep[] = INSTAGRAM_PHONE.map((step) => {
   return step
 })
 
+const INSTAGRAM_REMEMBER = ['Format: **JSON** (it starts on HTML)']
+
 const INSTAGRAM_NEXT = [
   'Instagram shows “Your information is being prepared for export”. It notifies you, and sends an email, when the file is ready.',
   'Go to **Export your information** again. Below **Available downloads**, tap **Download**.',
@@ -93,12 +102,14 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     wait: 'Usually a few hours, sometimes a few days',
     tip: 'TikTok keeps your full list of watched videos. This gives the most real feed.',
     sets: {
-      android: { checked: '2026-11-19', steps: TIKTOK_PHONE, next: TIKTOK_NEXT },
+      android: { checked: '2026-11-19', path: TIKTOK_PHONE_PATH, remember: TIKTOK_REMEMBER, steps: TIKTOK_PHONE, next: TIKTOK_NEXT },
       // iPhone screens are the same as Android (checked against public iPhone screen recordings).
-      iphone: { checked: '2026-11-20', steps: TIKTOK_PHONE, next: TIKTOK_NEXT, source: 'The screenshots come from Android; the iPhone screens are the same.' },
+      iphone: { checked: '2026-11-20', path: TIKTOK_PHONE_PATH, remember: TIKTOK_REMEMBER, steps: TIKTOK_PHONE, next: TIKTOK_NEXT, source: 'The screenshots come from Android; the iPhone screens are the same.' },
       // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
         checked: '2026-11-19',
+        path: ['tiktok.com', 'Profile picture', 'View profile', 'Settings icon', 'Download your data'],
+        remember: TIKTOK_REMEMBER,
         steps: [
           { text: 'Go to **tiktok.com** in your browser and log in.' },
           { text: 'Click your **profile picture** at the top right, then **View profile**.' },
@@ -116,11 +127,23 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     wait: 'Usually under a day, sometimes a few days',
     tip: 'Keep “All available information”. Instagram puts its list of topics for you in it, and we use that list for your interest map.',
     sets: {
-      android: { checked: '2026-11-19', steps: INSTAGRAM_PHONE, next: INSTAGRAM_NEXT },
-      iphone: { checked: '2026-11-20', steps: INSTAGRAM_IPHONE, next: INSTAGRAM_NEXT, source: 'The screenshots come from Android; the iPhone screens are almost the same.' },
+      android: {
+        checked: '2026-11-19',
+        path: ['Profile', '☰', 'Meta Account', 'Your information and permissions', 'Export your information', 'Create export', 'Export to device'],
+        remember: INSTAGRAM_REMEMBER,
+        steps: INSTAGRAM_PHONE,
+        next: INSTAGRAM_NEXT,
+      },
+      iphone: {
+        checked: '2026-11-20',
+        path: ['Profile', '☰', 'Accounts Center', 'Your information and permissions', 'Export your information', 'Create export', 'Export to device'],
+        remember: INSTAGRAM_REMEMBER,
+        steps: INSTAGRAM_IPHONE, next: INSTAGRAM_NEXT, source: 'The screenshots come from Android; the iPhone screens are almost the same.' },
       // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
         checked: '2026-11-19',
+        path: ['instagram.com', 'More (☰)', 'Settings', 'Meta Account', 'Your information and permissions', 'Export your information', 'Export to device'],
+        remember: INSTAGRAM_REMEMBER,
         steps: [
           { text: 'Go to **instagram.com** in your browser and log in.' },
           { text: 'Click **More** (☰) at the bottom left, then **Settings**.' },
@@ -143,6 +166,8 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
       // Checked against a Windows (Chrome) screen recording and Google's help page on 2026-11-19.
       all: {
         checked: '2026-11-19',
+        path: ['takeout.google.com', 'Deselect all', 'YouTube and YouTube Music', 'Next step', 'Create export'],
+        remember: ['Click **Deselect all** first, then select only YouTube'],
         steps: [
           { text: 'Go to **takeout.google.com** in your browser and sign in.' },
           { text: 'Below **Create a new export**, find **Select data to include**. Click **Deselect all**.', important: true },

@@ -9,6 +9,8 @@ describe('download guide', () => {
       for (const d of DEVICES) {
         const set = stepSet(guide, d.id)
         expect(set.steps.length).toBeGreaterThan(3)
+        expect(set.path.length).toBeGreaterThan(2)
+        expect(set.remember.length).toBeGreaterThan(0)
         expect(set.next.length).toBeGreaterThan(0)
       }
     }

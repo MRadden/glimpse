@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, H1, PLATFORM_META, Screen, Serif } from '../components/ui'
@@ -30,13 +31,14 @@ export default function Guide() {
   const nav = useNavigate()
   const [app, setApp] = useState<Platform>('tiktok')
   const [device, setDevice] = useState<Device>(() => detectDevice(navigator.userAgent))
+  const [open, setOpen] = useState(false)
   const guide = GUIDES[app]
   const oneSet = !!guide.sets.all
   const set = stepSet(guide, device)
 
   return (
     <Screen back="/" step={[1, 4]} footer={<Button onClick={() => nav('/upload')}>I have my file</Button>}>
-      <H1 sub="Ask each app for a copy of your data. Start with one app; you can add more later. The app needs time to prepare your file.">
+      <H1 sub="Ask each app for a copy of your data. Start with one app; you can add more later.">
         Get your <Serif>data</Serif>
       </H1>
 
@@ -83,45 +85,101 @@ export default function Guide() {
             <span className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-3 py-1 text-xs text-amber-100">Not yet checked on this device</span>
           )}
         </div>
-        <ol className="space-y-5">
-          {set.steps.map((s, i) => (
-            <li key={i} className="flex gap-3 text-[15px] leading-snug">
-              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${s.important ? 'bg-amber text-black' : 'bg-brand'}`}>{i + 1}</span>
-              <div className="min-w-0 flex-1 pt-0.5 text-white/85">
-                {s.important && <span className="mb-1 block text-[11px] font-semibold tracking-wider text-amber uppercase">Important</span>}
-                <Rich text={s.text} />
-                {s.image && (
-                  <img
-                    src={`${import.meta.env.BASE_URL}guide/${s.image}`}
-                    alt={`Screen for step ${i + 1}`}
-                    loading="lazy"
-                    className="mt-3 w-full max-w-[240px] rounded-2xl ring-1 ring-white/10"
-                  />
-                )}
-              </div>
+        <p className="mb-2 text-[13px] font-semibold tracking-wider text-muted uppercase">Where to find it</p>
+        <ol className="flex flex-wrap items-center gap-x-1 gap-y-2 text-[13px]" aria-label="Quick path">
+          {set.path.map((p, i) => (
+            <li key={i} className="flex items-center gap-1">
+              {i > 0 && (
+                <span aria-hidden className="text-muted">
+                  ›
+                </span>
+              )}
+              <span className="rounded-full bg-white/[0.07] px-2.5 py-1 font-medium text-white/90">{p}</span>
             </li>
           ))}
         </ol>
-      </Card>
-
-      <Card className="mt-4">
-        <p className="mb-3 text-[13px] font-semibold tracking-wider text-muted uppercase">What happens next</p>
-        <ul className="space-y-2.5 text-[14px] leading-snug text-white/85">
-          {set.next.map((t, i) => (
-            <li key={i} className="flex gap-2">
-              <span aria-hidden className="text-muted">•</span>
+        <ul className="mt-4 space-y-1.5">
+          {set.remember.map((r, i) => (
+            <li key={i} className="flex gap-2 text-[13px] leading-snug text-white/80">
+              <span aria-hidden className="text-amber">
+                ●
+              </span>
               <span>
-                <Rich text={t} />
+                <Rich text={r} />
               </span>
             </li>
           ))}
         </ul>
       </Card>
 
-      <p className="mt-4 px-1 text-[13px] leading-relaxed text-muted">💡 {guide.tip}</p>
-      <p className="mt-2 px-1 text-[12px] leading-relaxed text-muted/70">
-        {set.source ? `${set.source} ` : ''}Menu names can change when the apps update.
-      </p>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="guide-steps"
+        className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-4 py-3.5 text-left text-[14px] font-semibold text-white/90 ring-1 ring-white/10 transition hover:bg-white/[0.07]"
+      >
+        <span>{open ? 'Hide the step-by-step help' : 'Help me find how to download my data'}</span>
+        <span aria-hidden className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`}>
+          ⌄
+        </span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            id="guide-steps"
+            key="steps"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <Card className="mt-3">
+              <ol className="space-y-5">
+                {set.steps.map((s, i) => (
+                  <li key={i} className="flex gap-3 text-[15px] leading-snug">
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${s.important ? 'bg-amber text-black' : 'bg-brand'}`}>{i + 1}</span>
+                    <div className="min-w-0 flex-1 pt-0.5 text-white/85">
+                      {s.important && <span className="mb-1 block text-[11px] font-semibold tracking-wider text-amber uppercase">Important</span>}
+                      <Rich text={s.text} />
+                      {s.image && (
+                        <img
+                          src={`${import.meta.env.BASE_URL}guide/${s.image}`}
+                          alt={`Screen for step ${i + 1}`}
+                          loading="lazy"
+                          className="mt-3 w-full max-w-[240px] rounded-2xl ring-1 ring-white/10"
+                        />
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+
+            <Card className="mt-3">
+              <p className="mb-3 text-[13px] font-semibold tracking-wider text-muted uppercase">What happens next</p>
+              <ul className="space-y-2.5 text-[14px] leading-snug text-white/85">
+                {set.next.map((t, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span aria-hidden className="text-muted">
+                      •
+                    </span>
+                    <span>
+                      <Rich text={t} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            <p className="mt-4 px-1 text-[13px] leading-relaxed text-muted">💡 {guide.tip}</p>
+            <p className="mt-2 px-1 text-[12px] leading-relaxed text-muted/70">
+              {set.source ? `${set.source} ` : ''}Menu names can change when the apps update.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Screen>
   )
 }

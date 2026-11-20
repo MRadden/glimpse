@@ -72,17 +72,22 @@ export default function Welcome() {
           <span aria-hidden>⏳</span> Before you start
         </p>
         <p className="mt-2 text-[14px] leading-relaxed text-white/80">
-          First, you ask each app for a copy of your data. The app prepares a file for you. This can take <b className="text-white">a few hours to a few days</b>, depending on how busy the app&apos;s servers are.
+          You ask each app for a copy of your data. It can take <b className="text-white">a few hours to a few days</b> to be ready.
         </p>
-        <ul className="mt-3 space-y-1.5 text-[13px] text-white/75">
-          {WAITS.map(([app, wait]) => (
-            <li key={app} className="flex justify-between gap-3">
-              <span className="font-medium text-white/90">{app}</span>
-              <span className="text-right text-muted">{wait}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-[13px] leading-snug text-muted">You only do it once. We show you each step. Ask today, then come back when the app tells you the file is ready.</p>
+        <details className="group mt-2 text-[13px]">
+          <summary className="cursor-pointer list-none font-medium text-amber/90 [&::-webkit-details-marker]:hidden">
+            How long does each app take? <span className="inline-block transition-transform group-open:rotate-180">⌄</span>
+          </summary>
+          <ul className="mt-3 space-y-1.5 text-white/75">
+            {WAITS.map(([app, wait]) => (
+              <li key={app} className="flex justify-between gap-3">
+                <span className="font-medium text-white/90">{app}</span>
+                <span className="text-right text-muted">{wait}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 leading-snug text-muted">It depends on how busy the app&apos;s servers are. Ask today, then come back when the app tells you the file is ready.</p>
+        </details>
       </motion.section>
 
       <div className="mt-4 space-y-3">
