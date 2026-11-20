@@ -58,7 +58,7 @@ const TIKTOK_NEXT = [
 const INSTAGRAM_PHONE: GuideStep[] = [
   { text: 'Open Instagram and tap your **profile picture** at the bottom right.' },
   { text: 'Tap the **☰** menu at the top right. “Settings and activity” opens.' },
-  { text: 'Below **Your account**, tap **Meta Account**.', image: 'instagram-android-2.webp' },
+  { text: 'Below **Your account**, tap **Meta Account** (older versions name it **Accounts Center**).', image: 'instagram-android-2.webp' },
   { text: 'Tap **Your information and permissions**, then **Export your information**.', image: 'instagram-android-3.webp' },
   { text: 'Tap **Create export**.', image: 'instagram-android-4.webp' },
   { text: 'Select your **Instagram** profile (not the Facebook one).' },
@@ -68,6 +68,19 @@ const INSTAGRAM_PHONE: GuideStep[] = [
   { text: 'Optional: tap **Media quality** and select **Lower quality** to make the file smaller. Keep **All available information**.' },
   { text: 'Tap **Start export**. Enter your password and tap **Continue**.' },
 ]
+
+// iPhone: the same screens, checked against public iPhone screen recordings on 2026-11-20.
+// Differences: the menu item is named "Accounts Center" on some versions, and the
+// profile choice shows only when you have more than one profile.
+const INSTAGRAM_IPHONE: GuideStep[] = INSTAGRAM_PHONE.map((step) => {
+  if (step.text.startsWith('Below **Your account**'))
+    return { text: 'Below **Your account**, tap **Accounts Center** (newer versions name it **Meta Account**).' }
+  if (step.text.startsWith('Select your **Instagram** profile'))
+    return { text: 'If Instagram asks you to choose a profile, select your **Instagram** profile (not the Facebook one).' }
+  if (step.text.startsWith('Optional: tap **Media quality**'))
+    return { text: 'Optional: tap **Date range** and keep **Last year** (**All time** takes longer). Tap **Media quality** and select **Lower quality** for a smaller file.' }
+  return step
+})
 
 const INSTAGRAM_NEXT = [
   'Instagram shows “Your information is being prepared for export”. It notifies you, and sends an email, when the file is ready.',
@@ -81,7 +94,8 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     tip: 'TikTok keeps your full list of watched videos. This gives the most real feed.',
     sets: {
       android: { checked: '2026-11-19', steps: TIKTOK_PHONE, next: TIKTOK_NEXT },
-      iphone: { steps: TIKTOK_PHONE, next: TIKTOK_NEXT, source: 'Same as the Android app. iPhone screens can look a little different.' },
+      // iPhone screens are the same as Android (checked against public iPhone screen recordings).
+      iphone: { checked: '2026-11-20', steps: TIKTOK_PHONE, next: TIKTOK_NEXT, source: 'The screenshots come from Android; the iPhone screens are the same.' },
       // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
         checked: '2026-11-19',
@@ -103,7 +117,7 @@ export const GUIDES: Record<Platform, PlatformGuide> = {
     tip: 'Keep “All available information”. Instagram puts its list of topics for you in it, and we use that list for your interest map.',
     sets: {
       android: { checked: '2026-11-19', steps: INSTAGRAM_PHONE, next: INSTAGRAM_NEXT },
-      iphone: { steps: INSTAGRAM_PHONE, next: INSTAGRAM_NEXT, source: 'Same as the Android app. iPhone screens can look a little different.' },
+      iphone: { checked: '2026-11-20', steps: INSTAGRAM_IPHONE, next: INSTAGRAM_NEXT, source: 'The screenshots come from Android; the iPhone screens are almost the same.' },
       // Checked against a Windows (Chrome) screen recording on 2026-11-19.
       computer: {
         checked: '2026-11-19',
