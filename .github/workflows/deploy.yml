@@ -18,8 +18,10 @@ permissions:
   id-token: write
   actions: write
 
+# Publishing runs one at a time. The dating branch's small "ask main" run has its
+# own group, so it never stops a real publish (or is stopped by one).
 concurrency:
-  group: pages
+  group: ${{ github.ref == 'refs/heads/glimpse-dating-app' && 'ask-main' || 'pages' }}
   cancel-in-progress: true
 
 jobs:
