@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, H1, Logo, Screen, SectionTitle, Serif } from '../components/ui'
 import { compareInterests, type CompareRow } from '../lib/compare'
+import { rateMatch, type MatchRating } from '../dating/api'
 import { topicDef } from '../lib/topics'
 import { loadShortId, ShortLinkError } from '../share/cloud'
 import { useStore } from '../store'
@@ -200,6 +201,8 @@ function ComparePage({ a, b, ids }: { a: Snapshot; b: Snapshot; ids: [string, st
         </div>
       </Card>
 
+      <RateMatch a={ids[0]} b={ids[1]} score={c.score} />
+
       {c.shared.length > 0 && (
         <Card className="mt-4">
           <SectionTitle>You both see</SectionTitle>
@@ -254,6 +257,67 @@ function ComparePage({ a, b, ids }: { a: Snapshot; b: Snapshot; ids: [string, st
           <TopicList rows={c.onlyB} side="b" empty="Nothing only theirs." />
         </Card>
       </div>
+      <button onClick={() => nav('/match')} className="glass mt-4 flex w-full items-center gap-3 rounded-3xl p-4 text-left transition hover:bg-white/[0.07]">
+        <span className="bg-brand flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl">💌</span>
+        <span className="flex-1">
+          <span className="block text-[15px] font-semibold">Single? Get matched by your feed</span>
+          <span className="block text-[13px] text-muted">Coming soon. Join the waitlist for your city.</span>
+        </span>
+        <span className="text-muted">›</span>
+      </button>
     </Screen>
+  )
+}
+
+const RATINGS: { id: MatchRating; label: string }[] = [
+  { id: 'spot-on', label: 'Spot on' },
+  { id: 'somewhat', label: 'Somewhat' },
+  { id: 'not-really', label: 'Not really' },
+]
+
+/** "Did this match score feel accurate?" One tap; saved without any personal data. */
+function RateMatch({ a, b, score }: { a: string; b: string; score: number }) {
+  const key = `glimpse.rated.${a}.${b}`
+  const [rated, setRated] = useState<MatchRating | null>(() => {
+    try {
+      return (localStorage.getItem(key) as MatchRating | null) ?? null
+    } catch {
+      return null
+    }
+  })
+  const [failed, setFailed] = useState(false)
+  const choose = async (r: MatchRating) => {
+    setRated(r)
+    setFailed(false)
+    try {
+      await rateMatch(a, b, score, r)
+      try {
+        localStorage.setItem(key, r)
+      } catch {
+        /* storage blocked: the rating is still saved online */
+      }
+    } catch {
+      setFailed(true)
+      setRated(null)
+    }
+  }
+  return (
+    <Card className="mt-4">
+      <p className="text-[15px] font-semibold">Did this match score feel accurate?</p>
+      {rated ? (
+        <p className="mt-2 text-[14px] text-muted">Thank you! Your answer helps us make matching better.</p>
+      ) : (
+        <>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {RATINGS.map((r) => (
+              <button key={r.id} onClick={() => choose(r.id)} className="h-11 rounded-xl bg-white/[0.06] text-[14px] font-semibold text-white/90 transition hover:bg-white/[0.1] active:scale-95">
+                {r.label}
+              </button>
+            ))}
+          </div>
+          {failed && <p className="mt-2 text-[13px] text-red-200">Could not save your answer. Try again.</p>}
+        </>
+      )}
+    </Card>
   )
 }

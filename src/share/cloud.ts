@@ -14,13 +14,13 @@ export class ShortLinkError extends Error {
 
 export const SHORT_ID = /^[A-Za-z0-9]{10}$/
 
-interface CloudOptions {
+export interface CloudOptions {
   url?: string
   key?: string
   fetch?: typeof fetch
 }
 
-async function rpc(name: string, body: object, opts: CloudOptions): Promise<unknown> {
+export async function rpc(name: string, body: object, opts: CloudOptions = {}): Promise<unknown> {
   const url = (opts.url ?? SUPABASE_URL).replace(/\/$/, '')
   const key = opts.key ?? SUPABASE_KEY
   const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }

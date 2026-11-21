@@ -6,6 +6,7 @@ import { Button, Card, H1, Screen, SectionTitle, Serif } from '../components/ui'
 import { cloudEnabled } from '../config'
 import { createShortId, shortUrl, ShortLinkError } from '../share/cloud'
 import { shareUrl } from '../share/codec'
+import { datingChatText } from '../dating/api'
 import { feedLabel, platformsOf } from '../lib/platforms'
 import { useStore } from '../store'
 
@@ -18,6 +19,7 @@ export default function Share() {
   const s = useStore()
   const [qr, setQr] = useState('')
   const [copied, setCopied] = useState(false)
+  const [chatCopied, setChatCopied] = useState(false)
   const [link, setLink] = useState<LinkState>({ status: 'idle' })
   const made = link.status === 'ready'
   const url = link.status === 'ready' ? link.url : ''
@@ -176,6 +178,31 @@ export default function Share() {
               <Button onClick={copy}>{copied ? 'Copied ✓' : 'Send'}</Button>
             )}
           </div>
+          <Card className="!p-4">
+            <p className="text-[15px] font-semibold">💬 Sending it on a dating app?</p>
+            <p className="mt-1 mb-3 text-[13px] leading-snug text-muted">Copy a ready message for your chat. Many dating apps remove links from profiles, so a chat works best.</p>
+            <p className="mb-3 rounded-xl bg-white/[0.05] p-3 text-[13px] leading-snug text-white/80" data-testid="dating-text">
+              {datingChatText(s.minutes, apps, url)}
+            </p>
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                const text = datingChatText(s.minutes, apps, url)
+                try {
+                  await navigator.clipboard.writeText(text)
+                  setChatCopied(true)
+                  setTimeout(() => setChatCopied(false), 1800)
+                } catch {
+                  window.prompt('Copy this message', text)
+                }
+              }}
+            >
+              {chatCopied ? 'Copied ✓' : 'Copy message for a dating chat'}
+            </Button>
+            <button onClick={() => nav('/match', { state: { glimpseId: myId } })} className="mt-3 w-full text-center text-[13px] font-medium text-pink-200 underline-offset-4 hover:underline">
+              Single? Join the “match me by my feed” waitlist
+            </button>
+          </Card>
           <Button variant="ghost" onClick={() => nav(url.slice(url.indexOf('#') + 1))}>
             👀 Preview what they will see
           </Button>

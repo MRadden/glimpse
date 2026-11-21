@@ -5,6 +5,7 @@ import { CompareStart, CompareView } from './routes/Compare'
 import Curate from './routes/Curate'
 import Demo from './routes/Demo'
 import Guide from './routes/Guide'
+import MatchMe from './routes/MatchMe'
 import Share from './routes/Share'
 import Snapshot from './routes/Snapshot'
 import Upload from './routes/Upload'
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/v/*" element={<Viewer />} />
           <Route path="/g/:id" element={<ShortViewer />} />
           <Route path="/compare" element={<CompareStart />} />
+          <Route path="/match" element={<MatchMe />} />
           <Route path="/c/:a/:b" element={<CompareView />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

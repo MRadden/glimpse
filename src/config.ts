@@ -8,3 +8,9 @@ export const SUPABASE_URL: string = import.meta.env.VITE_SUPABASE_URL || 'https:
 export const SUPABASE_KEY: string = import.meta.env.VITE_SUPABASE_KEY || 'sb_publishable_-zYZmmfIE0_EcYKVCY4Sgw_7ufzle9e'
 
 export const cloudEnabled = () => Boolean(SUPABASE_URL && SUPABASE_KEY)
+
+/**
+ * Dating test: the city where matching opens first. Leave it empty to ask
+ * each person for their city with no suggestion.
+ */
+export const FOCUS_CITY: string = ''

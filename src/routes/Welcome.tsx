@@ -33,8 +33,11 @@ export default function Welcome() {
         </div>
       }
     >
-      <div className="pt-6">
+      <div className="flex items-center justify-between pt-6">
         <Logo />
+        <button onClick={() => nav('/match')} className="rounded-full bg-pink/15 px-3 py-1.5 text-[12px] font-semibold text-pink-200 ring-1 ring-pink/30">
+          💌 Match me · soon
+        </button>
       </div>
       {compareWith && (
         <button onClick={() => nav('/compare')} className="glass mt-6 flex w-full items-center gap-3 rounded-2xl p-3.5 text-left">
