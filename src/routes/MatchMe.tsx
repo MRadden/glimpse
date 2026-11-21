@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button, Card, H1, Screen, Serif } from '../components/ui'
-import { FOCUS_CITY } from '../config'
+import { FOCUS_CITY, FOCUS_CITY_LABEL } from '../config'
 import { AGE_RANGES, joinWaitlist, waitlistProblems, type AgeRange } from '../dating/api'
 import { ShortLinkError } from '../share/cloud'
 
@@ -71,6 +71,11 @@ export default function MatchMe() {
         Match me by <Serif>my feed</Serif>
       </H1>
 
+      {FOCUS_CITY_LABEL && (
+        <p className="mb-4 flex items-center gap-2 rounded-2xl bg-pink/10 px-4 py-3 text-[14px] text-pink-100 ring-1 ring-pink/25">
+          <span aria-hidden>📍</span> Matching opens first in <b className="font-semibold text-white">{FOCUS_CITY_LABEL}</b>.
+        </p>
+      )}
       <Card className="mb-4 space-y-4">
         {HOW.map(([emoji, title, text]) => (
           <div key={title} className="flex gap-3">

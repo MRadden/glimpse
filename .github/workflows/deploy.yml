@@ -1,34 +1,84 @@
 name: Deploy to GitHub Pages
 
+# Publishes two versions on one GitHub Pages site:
+#   main               -> https://mradden.github.io/glimpse/
+#   glimpse-dating-app -> https://mradden.github.io/glimpse/dating/  (preview, not listed by search engines)
+# A push to either branch rebuilds both, so the site always has the newest of each.
+# GitHub lets only main publish to Pages, so a push to the dating branch asks
+# main to run this workflow (the "ask-main" job), and main does the publishing.
+
 on:
   push:
-    branches: [main]
+    branches: [main, glimpse-dating-app]
   workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  ask-main:
+    if: github.ref == 'refs/heads/glimpse-dating-app'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Ask main to rebuild and publish both versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "${{ github.repository }}" --ref main
+
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      - name: Check out glimpse-dating-app
+        uses: actions/checkout@v4
+        with:
+          ref: glimpse-dating-app
+          path: dating
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
+
+      - name: Build main
+        working-directory: main
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Build the dating preview
+        working-directory: dating
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Put both versions together
+        run: |
+          mkdir -p site
+          cp -r main/dist/. site/
+          mkdir -p site/dating
+          cp -r dating/dist/. site/dating/
+          # Keep the preview out of search results.
+          sed -i 's#<head>#<head><meta name="robots" content="noindex, nofollow" />#' site/dating/index.html
+          sed -i 's#<title>Glimpse</title>#<title>Glimpse Dating (preview)</title>#' site/dating/index.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

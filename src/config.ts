@@ -13,4 +13,5 @@ export const cloudEnabled = () => Boolean(SUPABASE_URL && SUPABASE_KEY)
  * Dating test: the city where matching opens first. Leave it empty to ask
  * each person for their city with no suggestion.
  */
-export const FOCUS_CITY: string = ''
+export const FOCUS_CITY: string = 'Denver'
+export const FOCUS_CITY_LABEL: string = 'Denver, Colorado'
